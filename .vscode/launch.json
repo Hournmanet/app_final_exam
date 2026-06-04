@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ITE Store Dev",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "dev", "--dart-define=APP_ENV=dev"]
+    },
+    {
+      "name": "ITE Store UAT",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "uat", "--dart-define=APP_ENV=uat"]
+    },
+    {
+      "name": "ITE Store Demo",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "demo", "--dart-define=APP_ENV=demo"]
+    },
+    {
+      "name": "ITE Store Production",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "production", "--dart-define=APP_ENV=production"]
+    }
+  ]
+}
