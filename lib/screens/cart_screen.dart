@@ -104,14 +104,43 @@ class CartScreen extends StatelessWidget {
   }
 
   Future<void> _checkout(BuildContext context, CartProvider cart) async {
-    // Save order before clearing cart
     final orderProvider = context.read<OrderProvider>();
-    orderProvider.addOrder(cart.items, cart.totalPrice);
+    
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
-    await showCheckoutSuccessDialog(context);
-    if (!context.mounted) return;
-    cart.clear();
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    try {
+      // Save order and sync with Supabase
+      await orderProvider.addOrder(cart.items, cart.totalPrice);
+      
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Dismiss loading
+
+      await showCheckoutSuccessDialog(context);
+      
+      if (!context.mounted) return;
+      cart.clear();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Dismiss loading
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to place order: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () => _checkout(context, cart),
+          ),
+        ),
+      );
+    }
   }
 }
 

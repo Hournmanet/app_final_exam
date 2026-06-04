@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_environment.dart';
 import '../providers/theme_provider.dart';
 import '../providers/user_provider.dart';
@@ -28,11 +29,9 @@ class _MeScreenState extends State<MeScreen> {
   }
 
   void _openOrders() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const OrdersScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const OrdersScreen()));
   }
 
   void _showLogoutDialog(bool isDark, LanguageProvider lang) {
@@ -44,9 +43,7 @@ class _MeScreenState extends State<MeScreen> {
           lang.translate('log_out'),
           style: TextStyle(color: isDark ? Colors.white : Colors.black),
         ),
-        content: const Text(
-          'Are you sure you want to log out?',
-        ),
+        content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -59,7 +56,10 @@ class _MeScreenState extends State<MeScreen> {
                 const SnackBar(content: Text('Logged out successfully')),
               );
             },
-            child: Text(lang.translate('log_out'), style: const TextStyle(color: Colors.red)),
+            child: Text(
+              lang.translate('log_out'),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -73,7 +73,10 @@ class _MeScreenState extends State<MeScreen> {
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
           lang.translate('delete_account'),
-          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: const Text(
           'This action is permanent and cannot be undone. All your data will be lost.',
@@ -94,6 +97,78 @@ class _MeScreenState extends State<MeScreen> {
               );
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAuthDialog(bool isDark) {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final supabase = Supabase.instance.client;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'Login / Register',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await supabase.auth.signUp(
+                  email: emailController.text.trim(),
+                  password: passwordController.text.trim(),
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Verification email sent!')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+            },
+            child: const Text('Register'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await supabase.auth.signInWithPassword(
+                  email: emailController.text.trim(),
+                  password: passwordController.text.trim(),
+                );
+                await context.read<UserProvider>().fetchProfile();
+                Navigator.pop(context);
+                setState(() {});
+              } catch (e) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+            },
+            child: const Text('Login'),
           ),
         ],
       ),
@@ -136,8 +211,32 @@ class _MeScreenState extends State<MeScreen> {
         children: [
           const SizedBox(height: 20),
           _buildProfileHeader(isDark),
+          const SizedBox(height: 12),
+          if (Supabase.instance.client.auth.currentUser == null)
+            ElevatedButton.icon(
+              onPressed: () => _showAuthDialog(isDark),
+              icon: const Icon(Icons.cloud_upload_outlined),
+              label: const Text('Connect to Supabase (Sync Data)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade700,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 45),
+              ),
+            )
+          else
+            Text(
+              'Connected as: ${Supabase.instance.client.auth.currentUser!.email}',
+              style: const TextStyle(
+                color: Colors.green,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           const SizedBox(height: 24),
-          _buildOnlineBanner(context.watch<OrderProvider>().hasOrders, langProvider),
+          _buildOnlineBanner(
+            context.watch<OrderProvider>().hasOrders,
+            langProvider,
+          ),
           const SizedBox(height: 32),
           _buildActionGrid(isDark, langProvider),
           const SizedBox(height: 32),
@@ -256,9 +355,21 @@ class _MeScreenState extends State<MeScreen> {
           isDark,
           onTap: _openOrders,
         ),
-        _buildActionItem(Icons.qr_code_scanner, lang.translate('my_qr'), isDark),
-        _buildActionItem(Icons.card_membership_outlined, lang.translate('gift_card'), isDark),
-        _buildActionItem(Icons.storefront_outlined, lang.translate('find_a_store'), isDark),
+        _buildActionItem(
+          Icons.qr_code_scanner,
+          lang.translate('my_qr'),
+          isDark,
+        ),
+        _buildActionItem(
+          Icons.card_membership_outlined,
+          lang.translate('gift_card'),
+          isDark,
+        ),
+        _buildActionItem(
+          Icons.storefront_outlined,
+          lang.translate('find_a_store'),
+          isDark,
+        ),
       ],
     );
   }
@@ -311,7 +422,11 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildLanguageOption(String language, bool isDark, LanguageProvider lang) {
+  Widget _buildLanguageOption(
+    String language,
+    bool isDark,
+    LanguageProvider lang,
+  ) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -375,7 +490,11 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildSettingsSection(bool isDark, ThemeProvider themeProvider, LanguageProvider lang) {
+  Widget _buildSettingsSection(
+    bool isDark,
+    ThemeProvider themeProvider,
+    LanguageProvider lang,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
