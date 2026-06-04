@@ -15,6 +15,8 @@ import 'cart_screen.dart';
 import 'menu_screen.dart';
 import 'me_screen.dart';
 
+import '../providers/language_provider.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.environment});
 
@@ -138,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final catalog = context.watch<ProductCatalogProvider>();
     final filteredProducts = _filterProducts(catalog.allProducts);
     final isDark = context.watch<ThemeProvider>().isDarkMode;
+    final lang = context.watch<LanguageProvider>();
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
@@ -149,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(child: _buildCategoryTabs(isDark)),
-              SliverToBoxAdapter(child: _buildFreeDeliveryBanner(isDark)),
+              SliverToBoxAdapter(child: _buildFreeDeliveryBanner(isDark, lang)),
               SliverToBoxAdapter(child: _buildMainBanner()),
               SliverToBoxAdapter(child: _buildBrandsSection()),
               SliverToBoxAdapter(child: _buildPromotionBanner()),
@@ -179,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MeScreen(environment: widget.environment),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(lang),
     );
   }
 
@@ -299,14 +302,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFreeDeliveryBanner(bool isDark) {
+  Widget _buildFreeDeliveryBanner(bool isDark, LanguageProvider lang) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12),
       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       alignment: Alignment.center,
       child: Text(
-        'Spend \$40+ and enjoy FREE Delivery!',
+        lang.translate('free_delivery'),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -530,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(LanguageProvider lang) {
     return Container(
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
@@ -546,15 +549,15 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedFontSize: 10,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         items: [
-          const BottomNavigationBarItem(
-            icon: Padding(
+          BottomNavigationBarItem(
+            icon: const Padding(
               padding: EdgeInsets.only(bottom: 4),
               child: Text(
                 'Z.',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
             ),
-            label: 'Home',
+            label: lang.translate('home'),
           ),
           BottomNavigationBarItem(
             icon: Icon(
@@ -562,11 +565,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Icons.manage_search
                   : Icons.manage_search_outlined,
             ),
-            label: 'Menu',
+            label: lang.translate('menu'),
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Me',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person_outline),
+            label: lang.translate('me'),
           ),
         ],
       ),

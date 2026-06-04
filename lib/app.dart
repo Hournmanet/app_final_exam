@@ -8,6 +8,7 @@ import 'providers/product_catalog_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/order_provider.dart';
+import 'providers/language_provider.dart';
 import 'screens/home_screen.dart';
 
 class IteStoreApp extends StatelessWidget {
@@ -24,6 +25,7 @@ class IteStoreApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

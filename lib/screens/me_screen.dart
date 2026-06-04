@@ -4,6 +4,7 @@ import '../config/app_environment.dart';
 import '../providers/theme_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/order_provider.dart';
+import '../providers/language_provider.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
 import 'profile_edit_screen.dart';
@@ -18,8 +19,6 @@ class MeScreen extends StatefulWidget {
 }
 
 class _MeScreenState extends State<MeScreen> {
-  String _selectedLanguage = 'English';
-
   void _openCart() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -29,31 +28,29 @@ class _MeScreenState extends State<MeScreen> {
   }
 
   void _openOrders() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const OrdersScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const OrdersScreen(),
+      ),
+    );
   }
 
-  void _showLogoutDialog(bool isDark) {
+  void _showLogoutDialog(bool isDark, LanguageProvider lang) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         title: Text(
-          'Log Out',
+          lang.translate('log_out'),
           style: TextStyle(color: isDark ? Colors.white : Colors.black),
         ),
-        content: Text(
+        content: const Text(
           'Are you sure you want to log out?',
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: isDark ? Colors.white60 : Colors.grey),
-            ),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -62,33 +59,29 @@ class _MeScreenState extends State<MeScreen> {
                 const SnackBar(content: Text('Logged out successfully')),
               );
             },
-            child: const Text('Log Out', style: TextStyle(color: Colors.red)),
+            child: Text(lang.translate('log_out'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  void _showDeleteAccountDialog(bool isDark) {
+  void _showDeleteAccountDialog(bool isDark, LanguageProvider lang) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: const Text(
-          'Delete Account',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        title: Text(
+          lang.translate('delete_account'),
+          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        content: Text(
+        content: const Text(
           'This action is permanent and cannot be undone. All your data will be lost.',
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: isDark ? Colors.white60 : Colors.grey),
-            ),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -110,6 +103,7 @@ class _MeScreenState extends State<MeScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final langProvider = context.watch<LanguageProvider>();
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
@@ -119,7 +113,7 @@ class _MeScreenState extends State<MeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Me',
+          langProvider.translate('me'),
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontWeight: FontWeight.normal,
@@ -143,17 +137,17 @@ class _MeScreenState extends State<MeScreen> {
           const SizedBox(height: 20),
           _buildProfileHeader(isDark),
           const SizedBox(height: 24),
-          _buildOnlineBanner(context.watch<OrderProvider>().hasOrders),
+          _buildOnlineBanner(context.watch<OrderProvider>().hasOrders, langProvider),
           const SizedBox(height: 32),
-          _buildActionGrid(isDark),
+          _buildActionGrid(isDark, langProvider),
           const SizedBox(height: 32),
-          _buildLanguageSection(isDark),
+          _buildLanguageSection(isDark, langProvider),
           const SizedBox(height: 32),
-          _buildSupportSection(isDark),
+          _buildSupportSection(isDark, langProvider),
           const SizedBox(height: 24),
-          _buildSettingsSection(isDark, themeProvider),
+          _buildSettingsSection(isDark, themeProvider, langProvider),
           const SizedBox(height: 24),
-          _buildAccountDeletionSection(isDark),
+          _buildAccountDeletionSection(isDark, langProvider),
           const SizedBox(height: 40),
         ],
       ),
@@ -204,7 +198,7 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildOnlineBanner(bool hasPurchases) {
+  Widget _buildOnlineBanner(bool hasPurchases, LanguageProvider lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -240,7 +234,7 @@ class _MeScreenState extends State<MeScreen> {
           Text(
             hasPurchases
                 ? "You have successfully placed orders!"
-                : "You haven't made any success purchase yet.",
+                : lang.translate('free_delivery'),
             style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],
@@ -248,7 +242,7 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildActionGrid(bool isDark) {
+  Widget _buildActionGrid(bool isDark, LanguageProvider lang) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -258,13 +252,13 @@ class _MeScreenState extends State<MeScreen> {
       children: [
         _buildActionItem(
           Icons.description_outlined,
-          'MY ORDERS',
+          lang.translate('my_orders'),
           isDark,
           onTap: _openOrders,
         ),
-        _buildActionItem(Icons.qr_code_scanner, 'My QR', isDark),
-        _buildActionItem(Icons.card_membership_outlined, 'GIFT CARD', isDark),
-        _buildActionItem(Icons.storefront_outlined, 'FIND A STORE', isDark),
+        _buildActionItem(Icons.qr_code_scanner, lang.translate('my_qr'), isDark),
+        _buildActionItem(Icons.card_membership_outlined, lang.translate('gift_card'), isDark),
+        _buildActionItem(Icons.storefront_outlined, lang.translate('find_a_store'), isDark),
       ],
     );
   }
@@ -297,12 +291,12 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildLanguageSection(bool isDark) {
+  Widget _buildLanguageSection(bool isDark, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ភាសា / Languages',
+          'ភាសា / ${lang.translate('languages')}',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.normal,
@@ -310,14 +304,14 @@ class _MeScreenState extends State<MeScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        _buildLanguageOption('English', isDark),
-        _buildLanguageOption('ខ្មែរ', isDark),
-        _buildLanguageOption('中文', isDark),
+        _buildLanguageOption('English', isDark, lang),
+        _buildLanguageOption('ខ្មែរ', isDark, lang),
+        _buildLanguageOption('中文', isDark, lang),
       ],
     );
   }
 
-  Widget _buildLanguageOption(String language, bool isDark) {
+  Widget _buildLanguageOption(String language, bool isDark, LanguageProvider lang) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -335,8 +329,8 @@ class _MeScreenState extends State<MeScreen> {
           ),
         ),
         value: language,
-        groupValue: _selectedLanguage,
-        onChanged: (value) => setState(() => _selectedLanguage = value!),
+        groupValue: lang.currentLanguage,
+        onChanged: (value) => lang.setLanguage(value!),
         activeColor: isDark ? Colors.white : Colors.black,
         contentPadding: EdgeInsets.zero,
         controlAffinity: ListTileControlAffinity.trailing,
@@ -344,12 +338,12 @@ class _MeScreenState extends State<MeScreen> {
     );
   }
 
-  Widget _buildSupportSection(bool isDark) {
+  Widget _buildSupportSection(bool isDark, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Support',
+          lang.translate('support'),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.normal,
@@ -357,10 +351,10 @@ class _MeScreenState extends State<MeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        _buildListTile('Privacy policy', isDark),
-        _buildListTile('FAQs & guides', isDark),
-        _buildListTile('Rate this app', isDark),
-        _buildListTile('Recommend this app', isDark),
+        _buildListTile(lang.translate('privacy_policy'), isDark),
+        _buildListTile(lang.translate('faqs'), isDark),
+        _buildListTile(lang.translate('rate_app'), isDark),
+        _buildListTile(lang.translate('recommend_app'), isDark),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
@@ -374,19 +368,19 @@ class _MeScreenState extends State<MeScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Text('Contact us'),
+            child: Text(lang.translate('contact_us')),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSettingsSection(bool isDark, ThemeProvider themeProvider) {
+  Widget _buildSettingsSection(bool isDark, ThemeProvider themeProvider, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Settings',
+          lang.translate('settings'),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.normal,
@@ -405,7 +399,7 @@ class _MeScreenState extends State<MeScreen> {
           child: ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              'Dark Mode',
+              lang.translate('dark_mode'),
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? Colors.white : Colors.black,
@@ -419,13 +413,13 @@ class _MeScreenState extends State<MeScreen> {
             ),
           ),
         ),
-        _buildListTile('Clear cache', isDark),
+        _buildListTile(lang.translate('clear_cache'), isDark),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           height: 48,
           child: ElevatedButton(
-            onPressed: () => _showLogoutDialog(isDark),
+            onPressed: () => _showLogoutDialog(isDark, lang),
             style: ElevatedButton.styleFrom(
               backgroundColor: isDark ? Colors.white : Colors.black,
               foregroundColor: isDark ? Colors.black : Colors.white,
@@ -433,14 +427,14 @@ class _MeScreenState extends State<MeScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Text('LOG OUT'),
+            child: Text(lang.translate('log_out')),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAccountDeletionSection(bool isDark) {
+  Widget _buildAccountDeletionSection(bool isDark, LanguageProvider lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -454,9 +448,9 @@ class _MeScreenState extends State<MeScreen> {
         ),
         const SizedBox(height: 12),
         _buildListTile(
-          'Delete account',
+          lang.translate('delete_account'),
           isDark,
-          onTap: () => _showDeleteAccountDialog(isDark),
+          onTap: () => _showDeleteAccountDialog(isDark, lang),
         ),
       ],
     );
