@@ -72,11 +72,14 @@ class OrdersScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: orders.isEmpty
+      body: orderProvider.isLoading && orders.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : orders.isEmpty
           ? const EmptyState(
               icon: Icons.assignment_outlined,
               title: 'No orders yet',
-              subtitle: 'Your order history will appear here.',
+              subtitle:
+                  'Place an order while logged in with your email to see history here after restart.',
             )
           : ListView.separated(
               padding: const EdgeInsets.all(16),

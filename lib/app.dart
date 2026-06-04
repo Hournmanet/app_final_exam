@@ -102,7 +102,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _authService.syncUserProfile();
         if (mounted) {
           context.read<UserProvider>().fetchProfile();
+          context.read<OrderProvider>().loadOrders();
         }
+      }
+
+      if (event == AuthChangeEvent.initialSession && session != null && mounted) {
+        context.read<OrderProvider>().loadOrders();
+      }
+
+      if (event == AuthChangeEvent.signedOut && mounted) {
+        context.read<OrderProvider>().clearOrders();
       }
 
       if (mounted) {
@@ -113,7 +122,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     });
 
     // Handle initial session check
-    _authService.recoverSession().then((_) {
+    _authService.recoverSession().then((_) async {
+      if (!mounted) return;
+      if (_authService.currentUser != null) {
+        await context.read<OrderProvider>().loadOrders();
+      }
       if (mounted) {
         setState(() {
           _isInitialSessionChecked = true;

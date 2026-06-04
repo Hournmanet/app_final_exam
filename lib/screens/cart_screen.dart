@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 import '../config/app_environment.dart';
 import '../config/app_theme.dart';
 import '../providers/cart_provider.dart';
-import '../providers/order_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/currency_formatter.dart';
-import '../widgets/checkout_success_dialog.dart';
 import '../widgets/product_image.dart';
 import '../widgets/empty_state.dart';
+import 'checkout_flow_screen.dart';
 import 'orders_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -95,7 +94,7 @@ class CartScreen extends StatelessWidget {
                 ),
                 _CheckoutBar(
                   total: cart.totalPrice,
-                  onCheckout: () => _checkout(context, cart),
+                  onCheckout: () => _startCheckout(context),
                   isDark: isDark,
                 ),
               ],
@@ -103,44 +102,12 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _checkout(BuildContext context, CartProvider cart) async {
-    final orderProvider = context.read<OrderProvider>();
-    
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+  void _startCheckout(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CheckoutFlowScreen(environment: environment),
+      ),
     );
-
-    try {
-      // Save order and sync with Supabase
-      await orderProvider.addOrder(cart.items, cart.totalPrice);
-      
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // Dismiss loading
-
-      await showCheckoutSuccessDialog(context);
-      
-      if (!context.mounted) return;
-      cart.clear();
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // Dismiss loading
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to place order: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Retry',
-            textColor: Colors.white,
-            onPressed: () => _checkout(context, cart),
-          ),
-        ),
-      );
-    }
   }
 }
 

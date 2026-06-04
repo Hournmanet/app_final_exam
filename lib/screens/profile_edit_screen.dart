@@ -17,6 +17,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _dobController;
+  late TextEditingController _addressController;
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _emailController = TextEditingController(text: userProvider.email);
     _phoneController = TextEditingController(text: userProvider.phoneNumber);
     _dobController = TextEditingController(text: userProvider.dob);
+    _addressController = TextEditingController(text: userProvider.address);
   }
 
   @override
@@ -37,6 +39,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -88,7 +91,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               style: TextStyle(color: isDark ? Colors.white60 : Colors.black87, fontSize: 12),
             ),
             const SizedBox(height: 32),
-            _buildAddressSection(isDark, textColor),
+            _buildTextField(
+              'Your address',
+              _addressController,
+              isDark,
+              fieldBorderColor,
+              maxLines: 3,
+              hintText: 'Street, city, province',
+            ),
             const SizedBox(height: 40),
             _buildSaveButton(isDark),
             const SizedBox(height: 20),
@@ -139,25 +149,40 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, bool isDark, Color borderColor) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    bool isDark,
+    Color borderColor, {
+    int maxLines = 1,
+    String? hintText,
+  }) {
+    final isMultiline = maxLines > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14)),
         const SizedBox(height: 8),
         Container(
-          height: 56,
+          constraints: BoxConstraints(minHeight: isMultiline ? 96 : 56),
           decoration: BoxDecoration(
             border: Border.all(color: borderColor),
             borderRadius: BorderRadius.circular(4),
           ),
           child: TextField(
             controller: controller,
+            maxLines: maxLines,
+            keyboardType: isMultiline ? TextInputType.streetAddress : TextInputType.text,
+            textCapitalization: TextCapitalization.sentences,
             style: TextStyle(color: isDark ? Colors.white : Colors.black),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              hintText: hintText,
+              hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade400),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               border: InputBorder.none,
-              suffixIcon: Icon(Icons.check_circle_outline, color: Colors.green.shade200, size: 20),
+              suffixIcon: isMultiline
+                  ? null
+                  : Icon(Icons.check_circle_outline, color: Colors.green.shade200, size: 20),
             ),
           ),
         ),
@@ -195,29 +220,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildAddressSection(bool isDark, Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Your address', style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: isDark ? Colors.white24 : Colors.black)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Address book', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade400)),
-              Icon(Icons.chevron_right, color: textColor),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSaveButton(bool isDark) {
     return SizedBox(
       width: double.infinity,
@@ -231,6 +233,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                  gender: _gender,
                  phoneNumber: _phoneController.text,
                  dob: _dobController.text,
+                 address: _addressController.text.trim(),
                );
            if (!context.mounted) return;
            ScaffoldMessenger.of(context).showSnackBar(

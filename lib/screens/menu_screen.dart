@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../config/app_environment.dart';
+import '../models/catalog_browse_query.dart';
 import '../providers/cart_provider.dart';
 import '../providers/theme_provider.dart';
+import 'browse_products_screen.dart';
+import 'cart_screen.dart';
 
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({super.key});
+  const MenuScreen({super.key, required this.environment});
+
+  final AppEnvironment environment;
 
   @override
   State<MenuScreen> createState() => _MenuScreenState();
@@ -12,6 +19,7 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   int _selectedTabIndex = 0;
+  final _searchController = TextEditingController();
   final List<String> _tabs = ['WOMEN', 'MEN', 'KIDS', 'Z.HOME', 'LIFESTYLE'];
 
   final Map<String, List<String>> _menuItems = {
@@ -21,7 +29,7 @@ class _MenuScreenState extends State<MenuScreen> {
       'Accessories',
       'Shoes',
       'Shop by collection',
-      'SALE'
+      'SALE',
     ],
     'MEN': [
       'New In',
@@ -29,7 +37,7 @@ class _MenuScreenState extends State<MenuScreen> {
       'Accessories',
       'Shoes',
       'Shop by collection',
-      'SALE'
+      'SALE',
     ],
     'KIDS': ['Boys', 'Girls'],
     'Z.HOME': [
@@ -37,7 +45,7 @@ class _MenuScreenState extends State<MenuScreen> {
       'Bedroom Essentials',
       'Bath Essentials',
       'Living Essentials',
-      'Kitchen Essentials'
+      'Kitchen Essentials',
     ],
     'LIFESTYLE': [
       'New In',
@@ -46,9 +54,57 @@ class _MenuScreenState extends State<MenuScreen> {
       'Home Goods',
       'Plushies',
       'Stationery',
-      'Toys'
+      'Toys',
     ],
   };
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String get _selectedDepartment => _tabs[_selectedTabIndex];
+
+  void _openCart() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CartScreen(environment: widget.environment),
+      ),
+    );
+  }
+
+  void _openBrowse(String subCategory) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BrowseProductsScreen(
+          environment: widget.environment,
+          query: CatalogBrowseQuery(
+            departmentTab: _selectedDepartment,
+            subCategory: subCategory,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openSearch() {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BrowseProductsScreen(
+          environment: widget.environment,
+          query: CatalogBrowseQuery(
+            departmentTab: _selectedDepartment,
+            subCategory: 'Shop by collection',
+          ),
+          initialSearch: query,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,17 +128,23 @@ class _MenuScreenState extends State<MenuScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.notifications_none_outlined,
-              color: isDark ? Colors.white : Colors.black, size: 28),
+          icon: Icon(
+            Icons.notifications_none_outlined,
+            color: isDark ? Colors.white : Colors.black,
+            size: 28,
+          ),
           onPressed: () {},
         ),
         actions: [
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.shopping_bag_outlined,
-                    color: isDark ? Colors.white : Colors.black, size: 28),
-                onPressed: () {},
+                icon: Icon(
+                  Icons.shopping_bag_outlined,
+                  color: isDark ? Colors.white : Colors.black,
+                  size: 28,
+                ),
+                onPressed: _openCart,
               ),
               if (cartCount > 0)
                 Positioned(
@@ -125,11 +187,19 @@ class _MenuScreenState extends State<MenuScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: TextField(
+                    controller: _searchController,
                     style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _openSearch(),
                     decoration: InputDecoration(
                       hintText: 'What are you searching for?',
-                      hintStyle: TextStyle(color: isDark ? Colors.grey : Colors.grey.shade500),
-                      prefixIcon: Icon(Icons.search, color: isDark ? Colors.grey : Colors.grey.shade500),
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.grey : Colors.grey.shade500,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isDark ? Colors.grey : Colors.grey.shade500,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -146,11 +216,13 @@ class _MenuScreenState extends State<MenuScreen> {
           _buildFreeDeliveryBanner(isDark),
           Expanded(
             child: ListView.separated(
-              itemCount: _menuItems[_tabs[_selectedTabIndex]]!.length,
-              separatorBuilder: (context, index) =>
-                  Divider(height: 1, color: isDark ? Colors.white10 : Colors.grey.shade100),
+              itemCount: _menuItems[_selectedDepartment]!.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: isDark ? Colors.white10 : Colors.grey.shade100,
+              ),
               itemBuilder: (context, index) {
-                final item = _menuItems[_tabs[_selectedTabIndex]]![index];
+                final item = _menuItems[_selectedDepartment]![index];
                 final isSale = item == 'SALE';
                 return ListTile(
                   contentPadding:
@@ -158,7 +230,9 @@ class _MenuScreenState extends State<MenuScreen> {
                   title: Text(
                     item,
                     style: TextStyle(
-                      color: isSale ? Colors.red : (isDark ? Colors.white : Colors.black),
+                      color: isSale
+                          ? Colors.red
+                          : (isDark ? Colors.white : Colors.black),
                       fontSize: 16,
                       fontWeight: isSale ? FontWeight.w500 : FontWeight.w400,
                     ),
@@ -166,9 +240,11 @@ class _MenuScreenState extends State<MenuScreen> {
                   trailing: Icon(
                     Icons.chevron_right,
                     size: 20,
-                    color: isSale ? Colors.red : (isDark ? Colors.white : Colors.black),
+                    color: isSale
+                        ? Colors.red
+                        : (isDark ? Colors.white : Colors.black),
                   ),
-                  onTap: () {},
+                  onTap: () => _openBrowse(item),
                 );
               },
             ),
@@ -183,7 +259,11 @@ class _MenuScreenState extends State<MenuScreen> {
       height: 48,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF121212) : Colors.white,
-        border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade200)),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? Colors.white10 : Colors.grey.shade200,
+          ),
+        ),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -199,7 +279,9 @@ class _MenuScreenState extends State<MenuScreen> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
+                    color: isSelected
+                        ? (isDark ? Colors.white : Colors.black)
+                        : Colors.transparent,
                     width: 2,
                   ),
                 ),
@@ -207,7 +289,9 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Text(
                 _tabs[index],
                 style: TextStyle(
-                  color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.grey.shade500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : Colors.black)
+                      : Colors.grey.shade500,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: 14,
                   letterSpacing: 0.5,

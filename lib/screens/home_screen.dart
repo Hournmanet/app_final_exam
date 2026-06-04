@@ -176,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const MenuScreen(),
+          MenuScreen(environment: widget.environment),
           MeScreen(environment: widget.environment),
         ],
       ),

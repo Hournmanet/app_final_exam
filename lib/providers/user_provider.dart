@@ -36,6 +36,7 @@ class UserProvider extends ChangeNotifier {
   String _gender = 'Male';
   String _phoneNumber = '';
   String _dob = '01/01/2000';
+  String _address = '';
   String? _avatarUrl;
 
   String get firstName => _firstName;
@@ -44,6 +45,7 @@ class UserProvider extends ChangeNotifier {
   String get gender => _gender;
   String get phoneNumber => _phoneNumber;
   String get dob => _dob;
+  String get address => _address;
   String get fullName => '$_firstName $_lastName';
   String? get avatarUrl => _avatarUrl;
 
@@ -54,6 +56,7 @@ class UserProvider extends ChangeNotifier {
     _gender = 'Other';
     _phoneNumber = '';
     _dob = '';
+    _address = '';
     _avatarUrl = null;
     notifyListeners();
   }
@@ -65,6 +68,7 @@ class UserProvider extends ChangeNotifier {
     required String gender,
     required String phoneNumber,
     required String dob,
+    required String address,
   }) async {
     _firstName = firstName;
     _lastName = lastName;
@@ -72,6 +76,7 @@ class UserProvider extends ChangeNotifier {
     _gender = gender;
     _phoneNumber = phoneNumber;
     _dob = dob;
+    _address = address;
     notifyListeners();
 
     // Try to sync with Supabase if logged in
@@ -86,6 +91,7 @@ class UserProvider extends ChangeNotifier {
           'gender': _gender,
           'phone_number': _phoneNumber,
           'dob': _dob,
+          'address': _address,
           'updated_at': DateTime.now().toIso8601String(),
         });
       }
@@ -110,6 +116,7 @@ class UserProvider extends ChangeNotifier {
         _gender = data['gender'] ?? _gender;
         _phoneNumber = data['phone_number'] ?? _phoneNumber;
         _dob = data['dob'] ?? _dob;
+        _address = data['address'] ?? _address;
         notifyListeners();
       }
     } catch (e) {
