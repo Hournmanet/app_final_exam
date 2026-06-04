@@ -3,11 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 
 import '../config/app_environment.dart';
-import '../config/app_theme.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_catalog_provider.dart';
-import '../widgets/cart_badge_button.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/product_card.dart';
 import 'admin_screen.dart';

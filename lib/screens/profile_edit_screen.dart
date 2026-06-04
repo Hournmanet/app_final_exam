@@ -223,20 +223,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          context.read<UserProvider>().updateProfile(
-                firstName: _firstNameController.text,
-                lastName: _lastNameController.text,
-                email: _emailController.text,
-                gender: _gender,
-                phoneNumber: _phoneController.text,
-                dob: _dobController.text,
-              );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully')),
-          );
-          Navigator.pop(context);
-        },
+        onPressed: () async {
+           await context.read<UserProvider>().updateProfile(
+                 firstName: _firstNameController.text,
+                 lastName: _lastNameController.text,
+                 email: _emailController.text,
+                 gender: _gender,
+                 phoneNumber: _phoneController.text,
+                 dob: _dobController.text,
+               );
+           if (!context.mounted) return;
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(content: Text('Profile updated successfully')),
+           );
+           Navigator.pop(context);
+         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark ? Colors.white : Colors.black,
           foregroundColor: isDark ? Colors.black : Colors.white,

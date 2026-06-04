@@ -3,13 +3,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
-  
+
+  UserProvider() {
+    // Listen to auth state changes to automatically fetch profile
+    _supabase.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (data.event == AuthChangeEvent.signedIn && session != null) {
+        // Instant update from session metadata before DB fetch
+        _email = session.user.email ?? _email;
+        _firstName =
+            session.user.userMetadata?['full_name'] ??
+            session.user.userMetadata?['name'] ??
+            _firstName;
+        _lastName = '';
+        _avatarUrl =
+            session.user.userMetadata?['avatar_url'] ??
+            session.user.userMetadata?['picture'];
+        notifyListeners();
+        fetchProfile(); // Still fetch from DB for other details
+      } else if (data.event == AuthChangeEvent.initialSession &&
+          session != null) {
+        fetchProfile();
+      } else if (data.event == AuthChangeEvent.signedOut) {
+        _resetProfile();
+      }
+    });
+  }
+
   String _firstName = 'Manet';
   String _lastName = 'Hourn';
   String _email = 'hournmaneth88@gmail.com';
   String _gender = 'Male';
   String _phoneNumber = '';
   String _dob = '01/01/2000';
+  String? _avatarUrl;
 
   String get firstName => _firstName;
   String get lastName => _lastName;
@@ -18,6 +45,18 @@ class UserProvider extends ChangeNotifier {
   String get phoneNumber => _phoneNumber;
   String get dob => _dob;
   String get fullName => '$_firstName $_lastName';
+  String? get avatarUrl => _avatarUrl;
+
+  void _resetProfile() {
+    _firstName = 'Guest';
+    _lastName = '';
+    _email = '';
+    _gender = 'Other';
+    _phoneNumber = '';
+    _dob = '';
+    _avatarUrl = null;
+    notifyListeners();
+  }
 
   Future<void> updateProfile({
     required String firstName,
@@ -64,7 +103,7 @@ class UserProvider extends ChangeNotifier {
             .select()
             .eq('id', user.id)
             .single();
-        
+
         _firstName = data['first_name'] ?? _firstName;
         _lastName = data['last_name'] ?? _lastName;
         _email = data['email'] ?? _email;

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/app_environment.dart';
 import 'config/app_theme.dart';
 import 'providers/cart_provider.dart';
@@ -10,6 +12,7 @@ import 'providers/user_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/language_provider.dart';
 import 'screens/home_screen.dart';
+import 'services/auth_service.dart';
 
 class IteStoreApp extends StatelessWidget {
   const IteStoreApp({super.key, required this.environment});
@@ -54,10 +57,77 @@ class IteStoreApp extends StatelessWidget {
               ),
             ),
             themeMode: themeProvider.themeMode,
-            home: HomeScreen(environment: environment),
+            home: AuthWrapper(environment: environment),
           );
         },
       ),
     );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  final AppEnvironment environment;
+  const AuthWrapper({super.key, required this.environment});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final AuthService _authService = AuthService();
+  StreamSubscription<AuthState>? _authSubscription;
+  bool _isInitialSessionChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAuthListener();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupAuthListener() {
+    _authSubscription = _authService.authStateChanges.listen((data) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+
+      debugPrint('AuthWrapper: Auth State Change Event: $event');
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        debugPrint('AuthWrapper: User signed in. Syncing profile...');
+        _authService.syncUserProfile();
+        if (mounted) {
+          context.read<UserProvider>().fetchProfile();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isInitialSessionChecked = true;
+        });
+      }
+    });
+
+    // Handle initial session check
+    _authService.recoverSession().then((_) {
+      if (mounted) {
+        setState(() {
+          _isInitialSessionChecked = true;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialSessionChecked) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return HomeScreen(environment: widget.environment);
   }
 }

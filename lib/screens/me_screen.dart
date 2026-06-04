@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +8,7 @@ import '../providers/theme_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/language_provider.dart';
+import '../services/auth_service.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
 import 'profile_edit_screen.dart';
@@ -20,6 +23,106 @@ class MeScreen extends StatefulWidget {
 }
 
 class _MeScreenState extends State<MeScreen> {
+  final AuthService _authService = AuthService();
+
+  bool _isLoading = false;
+  bool _awaitingOAuth = false;
+  StreamSubscription<AuthState>? _authSubscription;
+  Timer? _loginTimeout;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = _authService.authStateChanges.listen(_onAuthStateChange);
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    _loginTimeout?.cancel();
+    super.dispose();
+  }
+
+  void _onAuthStateChange(AuthState data) {
+    if (!mounted || !_awaitingOAuth) return;
+
+    if (data.event == AuthChangeEvent.signedIn && data.session != null) {
+      _finishOAuthAttempt(success: true, user: data.session!.user);
+    } else if (data.event == AuthChangeEvent.signedOut) {
+      _finishOAuthAttempt(success: false, cancelled: true);
+    }
+  }
+
+  void _finishOAuthAttempt({
+    required bool success,
+    bool cancelled = false,
+    User? user,
+  }) {
+    _loginTimeout?.cancel();
+    _awaitingOAuth = false;
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (success && user != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account connected: ${user.email ?? 'your account'}'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else if (cancelled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sign-in cancelled'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _awaitingOAuth = true;
+    });
+
+    _loginTimeout?.cancel();
+    _loginTimeout = Timer(const Duration(seconds: 90), () {
+      if (mounted && _awaitingOAuth) {
+        _finishOAuthAttempt(success: false, cancelled: true);
+      }
+    });
+
+    try {
+      final launched = await _authService.signInWithGoogle();
+      if (!launched && mounted && _awaitingOAuth) {
+        _finishOAuthAttempt(success: false, cancelled: true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open Google sign-in'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _finishOAuthAttempt(success: false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
   void _openCart() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -39,27 +142,71 @@ class _MeScreenState extends State<MeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text(
-          lang.translate('log_out'),
-          style: TextStyle(color: isDark ? Colors.white : Colors.black),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            const SizedBox(width: 12),
+            Text(
+              lang.translate('log_out'),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        content: const Text('Are you sure you want to log out?'),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logged out successfully')),
-              );
-            },
             child: Text(
-              lang.translate('log_out'),
-              style: const TextStyle(color: Colors.red),
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
             ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                Navigator.pop(context);
+                // Show a brief loading indicator for smoothness
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Logging out...'),
+                      duration: Duration(milliseconds: 800),
+                    ),
+                  );
+                }
+
+                await _authService.signOut();
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Logged out successfully'),
+                    backgroundColor: Colors.black87,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(lang.translate('log_out')),
           ),
         ],
       ),
@@ -89,6 +236,7 @@ class _MeScreenState extends State<MeScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Account deleted successfully'),
@@ -97,78 +245,6 @@ class _MeScreenState extends State<MeScreen> {
               );
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAuthDialog(bool isDark) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final supabase = Supabase.instance.client;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text(
-          'Login / Register',
-          style: TextStyle(color: isDark ? Colors.white : Colors.black),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await supabase.auth.signUp(
-                  email: emailController.text.trim(),
-                  password: passwordController.text.trim(),
-                );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Verification email sent!')),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Error: $e')));
-              }
-            },
-            child: const Text('Register'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await supabase.auth.signInWithPassword(
-                  email: emailController.text.trim(),
-                  password: passwordController.text.trim(),
-                );
-                await context.read<UserProvider>().fetchProfile();
-                Navigator.pop(context);
-                setState(() {});
-              } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Error: $e')));
-              }
-            },
-            child: const Text('Login'),
           ),
         ],
       ),
@@ -211,25 +287,129 @@ class _MeScreenState extends State<MeScreen> {
         children: [
           const SizedBox(height: 20),
           _buildProfileHeader(isDark),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (Supabase.instance.client.auth.currentUser == null)
-            ElevatedButton.icon(
-              onPressed: () => _showAuthDialog(isDark),
-              icon: const Icon(Icons.cloud_upload_outlined),
-              label: const Text('Connect to Supabase (Sync Data)'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 45),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Sync your shopping experience',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Log in to access your orders, saved items, and personalized recommendations across devices.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (_isLoading)
+                    const CircularProgressIndicator(strokeWidth: 3)
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _handleGoogleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? Colors.white : Colors.black,
+                          foregroundColor: isDark ? Colors.black : Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: Image.network(
+                                'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.login, size: 20),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             )
           else
-            Text(
-              'Connected as: ${Supabase.instance.client.auth.currentUser!.email}',
-              style: const TextStyle(
-                color: Colors.green,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Account Connected',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          Supabase.instance.client.auth.currentUser!.email!,
+                          style: TextStyle(
+                            color: Colors.green.withOpacity(0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           const SizedBox(height: 24),
@@ -255,6 +435,20 @@ class _MeScreenState extends State<MeScreen> {
 
   Widget _buildProfileHeader(bool isDark) {
     final userProvider = context.watch<UserProvider>();
+    final supabaseUser = Supabase.instance.client.auth.currentUser;
+
+    // Determine the name and email to display
+    String displayName = userProvider.fullName;
+    String displayEmail = userProvider.email;
+
+    if (supabaseUser != null) {
+      displayName =
+          supabaseUser.userMetadata?['full_name'] ??
+          supabaseUser.userMetadata?['name'] ??
+          userProvider.fullName;
+      displayEmail = supabaseUser.email ?? userProvider.email;
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -270,7 +464,7 @@ class _MeScreenState extends State<MeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userProvider.fullName,
+                  displayName,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
@@ -279,7 +473,7 @@ class _MeScreenState extends State<MeScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  userProvider.email,
+                  displayEmail,
                   style: TextStyle(
                     color: isDark ? Colors.grey : Colors.black,
                     fontSize: 14,

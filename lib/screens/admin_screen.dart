@@ -174,8 +174,9 @@ class _AdminScreenState extends State<AdminScreen> {
                           const TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Enter price';
-                        if (double.tryParse(value) == null)
+                        if (double.tryParse(value) == null) {
                           return 'Invalid price';
+                        }
                         return null;
                       },
                     ),

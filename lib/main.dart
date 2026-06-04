@@ -12,25 +12,23 @@ Future<void> main() async {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        // OAuth callback is completed in AuthService via flutter_web_auth_2.
+        detectSessionInUri: false,
+      ),
     );
-
-    // Sign in anonymously if no user is logged in
-    final supabase = Supabase.instance.client;
-    final currentUser = supabase.auth.currentUser;
-    if (currentUser == null) {
-      debugPrint('No active Supabase session. Attempting anonymous sign-in...');
-      try {
-        final response = await supabase.auth.signInAnonymously();
-        debugPrint('Anonymous sign-in successful: ${response.user?.id}');
-      } catch (authError) {
-        debugPrint('CRITICAL: Anonymous sign-in failed. Ensure "Anonymous sign-in" is ENABLED in your Supabase Dashboard (Auth > Providers). Error: $authError');
-      }
+    
+    debugPrint('Supabase initialized successfully.');
+    
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser != null) {
+      debugPrint('Session restored for user: ${currentUser.email}');
     } else {
-      debugPrint('Active Supabase session found: ${currentUser.id} (${currentUser.email ?? "Guest"})');
+      debugPrint('No active session found.');
     }
   } catch (e) {
     debugPrint('Supabase Initialization Error: $e');
-    // We continue so the app doesn't crash, but features requiring Supabase will show errors
   }
 
   const envName = String.fromEnvironment('APP_ENV', defaultValue: 'production');
