@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../config/app_environment.dart';
@@ -111,6 +112,8 @@ class _MenuScreenState extends State<MenuScreen> {
     final cartCount = context.watch<CartProvider>().itemCount;
     final isDark = context.watch<ThemeProvider>().isDarkMode;
 
+    final iconColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       appBar: AppBar(
@@ -118,7 +121,7 @@ class _MenuScreenState extends State<MenuScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'ZANDO.',
+          'MDN.',
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontWeight: FontWeight.w900,
@@ -128,10 +131,11 @@ class _MenuScreenState extends State<MenuScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(
-            Icons.notifications_none_outlined,
-            color: isDark ? Colors.white : Colors.black,
-            size: 28,
+          icon: SvgPicture.asset(
+            'lib/icons/notifications_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+            width: 28,
+            height: 28,
           ),
           onPressed: () {},
         ),
@@ -139,10 +143,11 @@ class _MenuScreenState extends State<MenuScreen> {
           Stack(
             children: [
               IconButton(
-                icon: Icon(
-                  Icons.shopping_bag_outlined,
-                  color: isDark ? Colors.white : Colors.black,
-                  size: 28,
+                icon: SvgPicture.asset(
+                  'lib/icons/shopping_bag_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                  width: 28,
+                  height: 28,
                 ),
                 onPressed: _openCart,
               ),
@@ -179,16 +184,23 @@ class _MenuScreenState extends State<MenuScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Container(
                   height: 45,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                    color: isDark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: TextField(
                     controller: _searchController,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _openSearch(),
                     decoration: InputDecoration(
@@ -225,8 +237,10 @@ class _MenuScreenState extends State<MenuScreen> {
                 final item = _menuItems[_selectedDepartment]![index];
                 final isSale = item == 'SALE';
                 return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 4,
+                  ),
                   title: Text(
                     item,
                     style: TextStyle(

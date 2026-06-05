@@ -34,7 +34,7 @@ Future<void> showCheckoutSuccessDialog(BuildContext context) {
             ),
             const SizedBox(height: 10),
             Text(
-              'Thank you for shopping at ITE Store. Your order has been placed successfully.',
+              'Thank you for shopping at MDN App. Your order has been placed successfully.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, height: 1.4),
             ),

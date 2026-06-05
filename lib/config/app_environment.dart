@@ -21,18 +21,18 @@ enum AppEnvironment {
   }
 
   String get displayName => switch (this) {
-        AppEnvironment.dev => 'ITE Store Dev',
-        AppEnvironment.uat => 'ITE Store Test',
-        AppEnvironment.demo => 'ITE Store Demo',
-        AppEnvironment.production => 'ITE Store',
-      };
+    AppEnvironment.dev => 'MDN App Dev',
+    AppEnvironment.uat => 'MDN App Test',
+    AppEnvironment.demo => 'MDN App Demo',
+    AppEnvironment.production => 'MDN App',
+  };
 
   String get shortLabel => switch (this) {
-        AppEnvironment.dev => 'DEV',
-        AppEnvironment.uat => 'UAT',
-        AppEnvironment.demo => 'DEMO',
-        AppEnvironment.production => 'PROD',
-      };
+    AppEnvironment.dev => 'DEV',
+    AppEnvironment.uat => 'UAT',
+    AppEnvironment.demo => 'DEMO',
+    AppEnvironment.production => 'PROD',
+  };
 
   bool get cartEnabled => this != AppEnvironment.demo;
 }

@@ -1,6 +1,6 @@
 name: final_exam
-description: ITE Store - Final exam Flutter e-commerce app.
-publish_to: 'none'
+description: MDN App - Final exam Flutter e-commerce app.
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -19,11 +19,32 @@ dependencies:
   supabase_flutter: ^2.8.1
   shared_preferences: ^2.5.5
   flutter_web_auth_2: ^4.1.0
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.8
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - lib/icons/
+    - assets/
+
+flutter_native_splash:
+  color: "#000000"
+  image: assets/splash_logo_big.png
+  android: true
+  ios: true
+  fullscreen: true
+  web: false
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo.jpeg"
+  remove_alpha_ios: true

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -185,17 +186,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(int cartCount, bool isDark) {
+    final iconColor = isDark ? Colors.white : Colors.black;
     return AppBar(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       leading: IconButton(
-        icon: Icon(
-          Icons.notifications_none_outlined,
-          color: isDark ? Colors.white : Colors.black,
+        icon: SvgPicture.asset(
+          'lib/icons/notifications_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+          width: 24,
+          height: 24,
         ),
         onPressed: () {},
       ),
       title: Text(
-        'ZANDO.',
+        'MDN.',
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           fontWeight: FontWeight.bold,
@@ -204,9 +208,11 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         // Permanently visible Admin button to add new items
         IconButton(
-          icon: Icon(
-            Icons.add_box_outlined,
-            color: isDark ? Colors.white : Colors.black,
+          icon: SvgPicture.asset(
+            'lib/icons/rectangle_add_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+            width: 24,
+            height: 24,
           ),
           onPressed: () => _openAdmin(),
           tooltip: 'Add New Item',
@@ -214,9 +220,11 @@ class _HomeScreenState extends State<HomeScreen> {
         Stack(
           children: [
             IconButton(
-              icon: Icon(
-                Icons.shopping_bag_outlined,
-                color: isDark ? Colors.white : Colors.black,
+              icon: SvgPicture.asset(
+                'lib/icons/shopping_bag_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                width: 24,
+                height: 24,
               ),
               onPressed: _openCart,
             ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_environment.dart';
@@ -33,7 +34,9 @@ class _MeScreenState extends State<MeScreen> {
   @override
   void initState() {
     super.initState();
-    _authSubscription = _authService.authStateChanges.listen(_onAuthStateChange);
+    _authSubscription = _authService.authStateChanges.listen(
+      _onAuthStateChange,
+    );
   }
 
   @override
@@ -274,9 +277,14 @@ class _MeScreenState extends State<MeScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.shopping_bag_outlined,
-              color: isDark ? Colors.white : Colors.black,
+            icon: SvgPicture.asset(
+              'lib/icons/shopping_bag_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+              colorFilter: ColorFilter.mode(
+                isDark ? Colors.white : Colors.black,
+                BlendMode.srcIn,
+              ),
+              width: 24,
+              height: 24,
             ),
             onPressed: _openCart,
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../config/app_environment.dart';
@@ -85,7 +86,15 @@ class _BrowseProductsScreenState extends State<BrowseProductsScreen> {
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined),
+                icon: SvgPicture.asset(
+                  'lib/icons/shopping_bag_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+                  colorFilter: ColorFilter.mode(
+                    isDark ? Colors.white : Colors.black,
+                    BlendMode.srcIn,
+                  ),
+                  width: 24,
+                  height: 24,
+                ),
                 onPressed: _openCart,
               ),
               if (cartCount > 0)
@@ -135,7 +144,9 @@ class _BrowseProductsScreenState extends State<BrowseProductsScreen> {
                   color: isDark ? Colors.grey : Colors.grey.shade500,
                 ),
                 filled: true,
-                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+                fillColor: isDark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.grey.shade100,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(4),
                   borderSide: BorderSide.none,
